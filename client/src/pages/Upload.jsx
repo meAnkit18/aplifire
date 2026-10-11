@@ -8,6 +8,7 @@ export default function Upload({ selected, presetChannels }) {
   const [ids, setIds] = useState(selected);
   const [pubs, setPubs] = useState([]);
   const [busy, setBusy] = useState('');
+  const [link, setLink] = useState('');
   useEffect(() => { if (!presetChannels) api.channels().then((l) => Array.isArray(l) && setChannels(l)); }, [presetChannels]);
   useEffect(() => { setIds(selected); }, [selected]);
   async function doUpload() {
@@ -37,6 +38,26 @@ export default function Upload({ selected, presetChannels }) {
   return (
     <div style={s.wrap}>
       <h2 style={{ margin: '4px 0 12px' }}>Upload once → publish everywhere</h2>
+      <div style={s.card}>
+        <input style={s.input} placeholder="Paste Instagram reel link…" value={link} onChange={(e) => setLink(e.target.value)} />
+        <button style={s.btn} onClick={async () => {
+          if (!link) return;
+          setBusy('Fetching reel…');
+          try {
+            const r = await api.importReel(link);
+            if (!r.videoId) { alert(r.error || 'import failed'); return; }
+            setVideo({ videoId: r.videoId, url: r.url });
+            setLink('');
+            const tick = async () => setPubs(await api.pubs(r.videoId));
+            await tick();
+            const iv = setInterval(async () => {
+              const list = await api.pubs(r.videoId);
+              setPubs(list);
+              if (list.length && list.every((p) => ['succeeded', 'failed'].includes(p.status))) clearInterval(iv);
+            }, 5000);
+          } finally { setBusy(''); }
+        }} disabled={busy}>{busy || 'Import & publish to all channels'}</button>
+      </div>
       {!video ? (
         <div style={s.card}>
           <input type="file" accept="video/*" onChange={(e) => setFile(e.target.files[0])} />

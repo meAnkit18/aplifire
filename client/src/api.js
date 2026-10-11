@@ -9,4 +9,5 @@ export const api = {
   upload: (fd) => fetch(`${BASE}/api/videos`, { method: 'POST', headers: authHeader(localStorage.getItem('token') || ''), body: fd }).then((r) => r.json()),
   publish: (payload) => fetch(`${BASE}/api/publications`, { method: 'POST', headers: h(), body: JSON.stringify(payload) }).then((r) => r.json()),
   pubs: (videoId) => fetch(`${BASE}/api/publications?videoId=${videoId}`, { headers: h() }).then((r) => r.json()),
+  importReel: (url) => fetch(`${BASE}/api/imports/instagram`, { method: 'POST', headers: h(), body: JSON.stringify({ url }) }).then((r) => r.json()),
 };
