@@ -11,7 +11,8 @@ channelsRouter.get('/callback', async (req, res) => {
     if (!tokens.refresh_token) return res.status(400).json({ error: 'no refresh token — remove app access in Google account and retry' });
     const yt = authedYoutube(tokens.refresh_token);
     const { data } = await yt.channels.list({ mine: true, part: ['snippet'] });
-    const ch = data.items[0];
+    const ch = data.items?.[0];
+    if (!ch) return res.status(400).json({ error: 'no YouTube channel found on this Google account — create a channel at youtube.com first, then reconnect' });
     const key = process.env.TOKEN_ENCRYPTION_KEY || config.tokenKey;
     await Channel.findOneAndUpdate({ youtubeChannelId: ch.id },
       { title: ch.snippet.title, thumbnail: ch.snippet.thumbnails?.default?.url, encryptedRefreshToken: encrypt(tokens.refresh_token, key), status: 'connected', lastSyncAt: new Date() },

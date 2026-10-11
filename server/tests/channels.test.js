@@ -1,8 +1,14 @@
 import request from 'supertest';
 import bcrypt from 'bcryptjs';
+import { vi } from 'vitest';
 process.env.ADMIN_EMAIL = 'admin@test.com';
 process.env.ADMIN_PASSWORD_HASH = bcrypt.hashSync('secret123', 8);
 process.env.JWT_SECRET = 'test-secret-1234567890test';
+vi.mock('../src/youtube.js', () => ({
+  oauthClient: () => ({ getToken: async () => ({ tokens: { refresh_token: 'fake-refresh' } }) }),
+  authedYoutube: () => ({ channels: { list: async () => ({ data: {} }) } }),
+  oauthUrl: () => 'https://accounts.google.com/o/oauth2/v2/auth?client_id=test',
+}));
 import { createApp } from '../src/app.js';
 
 async function login(app) {
@@ -30,6 +36,13 @@ test('channel list still requires login', async () => {
   const app = createApp();
   const res = await request(app).get('/api/channels');
   expect(res.status).toBe(401);
+});
+
+test('callback explains when Google account has no YouTube channel', async () => {
+  const app = createApp();
+  const res = await request(app).get('/api/channels/callback?code=real-code-no-channel');
+  expect(res.status).toBe(400);
+  expect(res.body.error).toMatch(/no youtube channel/i);
 });
 test('oauth-url returns a Google url when configured', async () => {
   process.env.GOOGLE_CLIENT_ID = 'test-client-id';
