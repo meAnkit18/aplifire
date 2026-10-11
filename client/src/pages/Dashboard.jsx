@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import ReactFlow, { Background, Controls, MiniMap } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { api } from '../api.js';
+import { pickOAuthUrl } from '../oauth.js';
 import ChannelNode from '../components/ChannelNode.jsx';
 const nodeTypes = { channel: ChannelNode };
 export default function Dashboard({ selected, setSelected, onUpload }) {
@@ -13,8 +14,9 @@ export default function Dashboard({ selected, setSelected, onUpload }) {
   }, []);
   useEffect(() => { load(); }, [load]);
   async function addChannel() {
-    const { url } = await api.oauthUrl();
-    if (url) window.location.href = url;
+    try {
+      window.location.href = pickOAuthUrl(await api.oauthUrl());
+    } catch (e) { alert(e.message); }
   }
   const nodes = [
     { id: 'main', position: { x: 60, y: 160 }, data: { label: 'Control Center' }, style: { width: 200, padding: 14, borderRadius: 14, background: '#5b6cff', color: '#fff', fontWeight: 800, textAlign: 'center' } },

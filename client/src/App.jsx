@@ -1,19 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { routeFor } from './route.js';
 import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Upload from './pages/Upload.jsx';
 import Privacy from './pages/Privacy.jsx';
 export default function App() {
-  if (window.location.hash === '#/privacy') {
+  const [route, setRoute] = useState(routeFor(window.location.hash));
+  const [authed, setAuthed] = useState(!!localStorage.getItem('token'));
+  const [view, setView] = useState('dash');
+  const [selected, setSelected] = useState([]);
+  useEffect(() => {
+    const onHash = () => setRoute(routeFor(window.location.hash));
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+  if (route === 'privacy') {
     return (
       <div style={{ minHeight: '100vh', background: '#0b0d12' }}>
         <Privacy />
       </div>
     );
   }
-  const [authed, setAuthed] = useState(!!localStorage.getItem('token'));
-  const [view, setView] = useState('dash');
-  const [selected, setSelected] = useState([]);
   if (!authed) return <Login onDone={() => setAuthed(true)} />;
   return (
     <div style={{ minHeight: '100vh', background: '#0b0d12' }}>
