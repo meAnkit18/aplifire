@@ -48,15 +48,12 @@ export default function Upload({ selected, presetChannels }) {
             if (!r.videoId) { alert(r.error || 'import failed'); return; }
             setVideo({ videoId: r.videoId, url: r.url });
             setLink('');
-            const tick = async () => setPubs(await api.pubs(r.videoId));
-            await tick();
-            const iv = setInterval(async () => {
-              const list = await api.pubs(r.videoId);
-              setPubs(list);
-              if (list.length && list.every((p) => ['succeeded', 'failed'].includes(p.status))) clearInterval(iv);
-            }, 5000);
+            if (r.metadata) setMeta({ title: r.metadata.title || '', description: r.metadata.description || '', tags: (r.metadata.tags || []).join(', '), privacy: r.metadata.privacy || 'public' });
+            else setMeta((m) => ({ ...m, privacy: 'public' }));
+            const list = await api.channels();
+            if (Array.isArray(list)) { setChannels(list); setIds(list.map((c) => c._id)); }
           } finally { setBusy(''); }
-        }} disabled={busy}>{busy || 'Import & publish to all channels'}</button>
+        }} disabled={busy}>{busy || 'Import reel'}</button>
       </div>
       {!video ? (
         <div style={s.card}>

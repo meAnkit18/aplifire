@@ -12,3 +12,12 @@ export function titleFromCaption(caption, rid) {
   if (!first) return `Instagram reel ${rid}`;
   return first.slice(0, 100);
 }
+export function tagsFromCaption(caption) {
+  const tags = [];
+  for (const m of String(caption || '').matchAll(/#([A-Za-z0-9_]+)/g)) {
+    const t = m[1];
+    if (t.length <= 30 && !tags.includes(t)) tags.push(t);
+    if (tags.length >= 15) break;
+  }
+  return tags;
+}

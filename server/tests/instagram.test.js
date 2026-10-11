@@ -1,4 +1,4 @@
-import { isReelUrl, reelId, titleFromCaption } from '../src/instagram.js';
+import { isReelUrl, reelId, titleFromCaption, tagsFromCaption } from '../src/instagram.js';
 test('accepts reel links in any shape', () => {
   expect(isReelUrl('https://www.instagram.com/reel/ABC123xyz_-/')).toBe('https://www.instagram.com/reel/ABC123xyz_-/');
   expect(isReelUrl('http://instagram.com/reel/ABC123xyz_-?utm_source=ig')).toBe('https://www.instagram.com/reel/ABC123xyz_-/');
@@ -19,4 +19,10 @@ test('derives title from caption', () => {
   expect(titleFromCaption('  \n  fallen back  ', 'ID1')).toBe('fallen back');
   expect(titleFromCaption('', 'ID1')).toBe('Instagram reel ID1');
   expect(titleFromCaption('x'.repeat(200), 'ID1')).toBe('x'.repeat(100));
+});
+test('extracts hashtags as tags', () => {
+  expect(tagsFromCaption('#sunset vibes #Travel2024!')).toEqual(['sunset', 'Travel2024']);
+  expect(tagsFromCaption('no tags here')).toEqual([]);
+  expect(tagsFromCaption('')).toEqual([]);
+  expect(tagsFromCaption('#a #a #b')).toEqual(['a', 'b']);
 });

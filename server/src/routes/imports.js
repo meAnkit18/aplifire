@@ -5,10 +5,8 @@ import { v2 as cloudinary } from 'cloudinary';
 import { requireAuth } from '../auth.js';
 import { Channel } from '../models/Channel.js';
 import { Video } from '../models/Video.js';
-import { Publication } from '../models/Publication.js';
-import { fanout } from '../fanout.js';
 import { expiryDate } from '../cleanup.js';
-import { isReelUrl, reelId, titleFromCaption } from '../instagram.js';
+import { isReelUrl, reelId, titleFromCaption, tagsFromCaption } from '../instagram.js';
 export const importsRouter = Router();
 importsRouter.use(requireAuth);
 importsRouter.post('/instagram', async (req, res) => {
@@ -25,6 +23,8 @@ importsRouter.post('/instagram', async (req, res) => {
     } catch (e) { return res.status(502).json({ error: `could not read reel (private, deleted, or rate-limited): ${String(e.message || e).slice(0, 200)}` }); }
     const caption = meta.description || meta.title || '';
     const title = titleFromCaption(caption, reelId(normalized));
+    const tags = tagsFromCaption(caption);
+    const description = `${caption}\n\nSource: ${normalized}`.trim();
     const prefix = `reel-${Date.now()}-`;
     let file;
     try {
@@ -39,11 +39,9 @@ importsRouter.post('/instagram', async (req, res) => {
       });
       const v = await Video.create({
         cloudinaryUrl: done.secure_url, cloudinaryPublicId: done.public_id, cloudinaryExpiresAt: expiryDate(),
-        metadata: { title, description: `${caption}\n\nSource: ${normalized}`.trim(), tags: [], privacy: 'public' },
+        metadata: { title, description, tags, privacy: 'public' },
       });
-      const docs = await Publication.insertMany(channels.map((c) => ({ videoId: v.id, channelId: c._id, status: 'queued' })));
-      fanout(docs.map((d) => d.id));
-      res.json({ videoId: v.id, url: v.cloudinaryUrl });
+      res.json({ videoId: v.id, url: v.cloudinaryUrl, metadata: { title, description, tags, privacy: 'public' } });
     } finally { fs.unlink(file, () => {}); }
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
