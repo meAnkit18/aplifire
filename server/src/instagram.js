@@ -1,4 +1,4 @@
-const REEL_RE = /^https?:\/\/(www\.)?instagram\.com\/reel\/([A-Za-z0-9_-]+)\/?(?:[?#].*)?$/;
+const REEL_RE = /^https?:\/\/(www\.)?instagram\.com\/reels?\/([A-Za-z0-9_-]+)\/?(?:[?#].*)?$/;
 export function reelId(url) {
   const m = String(url || '').trim().match(REEL_RE);
   return m ? m[2] : null;

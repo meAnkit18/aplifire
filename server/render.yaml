@@ -3,7 +3,7 @@ services:
     name: amplifier-api
     env: node
     rootDir: server
-    buildCommand: npm install
+    buildCommand: mkdir -p .bin && ln -sf $(command -v python3) .bin/python && PATH="$PWD/.bin:$PATH" npm install
     startCommand: node src/index.js
     envVars:
       - key: NODE_VERSION

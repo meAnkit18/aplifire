@@ -2,6 +2,7 @@ import { isReelUrl, reelId, titleFromCaption } from '../src/instagram.js';
 test('accepts reel links in any shape', () => {
   expect(isReelUrl('https://www.instagram.com/reel/ABC123xyz_-/')).toBe('https://www.instagram.com/reel/ABC123xyz_-/');
   expect(isReelUrl('http://instagram.com/reel/ABC123xyz_-?utm_source=ig')).toBe('https://www.instagram.com/reel/ABC123xyz_-/');
+  expect(isReelUrl('https://www.instagram.com/reels/DeV9z3cvuWG/')).toBe('https://www.instagram.com/reel/DeV9z3cvuWG/');
 });
 test('rejects non-reel links', () => {
   expect(isReelUrl('https://www.instagram.com/p/ABC123/')).toBeNull();
