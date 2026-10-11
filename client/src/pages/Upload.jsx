@@ -52,7 +52,7 @@ export default function Upload({ selected, presetChannels }) {
             else setMeta((m) => ({ ...m, privacy: 'public' }));
             const list = await api.channels();
             if (Array.isArray(list)) { setChannels(list); setIds(list.map((c) => c._id)); }
-          } finally { setBusy(''); }
+          } catch (e) { alert(`import failed: ${e.message}`); } finally { setBusy(''); }
         }} disabled={busy}>{busy || 'Import reel'}</button>
       </div>
       {!video ? (
