@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "description": "Upload Instagram reels to all your YouTube channels.",
   "permissions": ["storage"],
-  "host_permissions": ["https://www.instagram.com/"],
+  "host_permissions": ["https://www.instagram.com/", "https://amplifier-api.onrender.com/"],
   "background": { "service_worker": "background.js" },
   "action": { "default_popup": "popup.html", "default_title": "Amplifier" },
   "content_scripts": [
