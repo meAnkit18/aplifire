@@ -21,12 +21,12 @@ channels automatically.
 1. `manifest.json` — Manifest V3. Host permission for the Instagram
    reels feed, `storage` permission for the token, popup + content
    script registration.
-2. `content.js` — Runs on the reels feed. A `MutationObserver` adds an
-   Upload button to each reel article as it scrolls into view (including
-   reels already on screen). The reel permalink is read from the
-   article's link to `/reel/<id>/`. On click the button shows a spinner,
-   performs the three-call sequence below, then shows ✓ or the error
-   text on the reel. Clicks while busy are ignored (no duplicates).
+2. `content.js` — Runs on the reels feed. The viewer shows one reel at
+   a time (no per-reel article elements exist), so a single floating
+   Upload button (bottom-right) tracks the current reel, parsed from the
+   address bar on every DOM change. Clicking captures that reel's
+   permalink and sends it to the background; the button shows spinner,
+   then ✓ or the error. Clicks while busy are ignored (no duplicates).
 3. `popup.html` / `popup.js` — Email + password login form calling
    `POST /api/auth/login` on the production API. The token is saved in
    `chrome.storage.local` and attached as `Bearer` on every call. The
