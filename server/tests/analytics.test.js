@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'vitest';
 import { oauthUrl } from '../src/youtube.js';
 import { parseRange, totalsFor, isThrottled } from '../src/analytics.js';
+import { runAnalyticsSync } from '../src/syncAnalytics.js';
 import { Publication } from '../src/models/Publication.js';
 import { Channel } from '../src/models/Channel.js';
 describe('analytics oauth', () => {
@@ -39,5 +40,11 @@ describe('analytics helpers', () => {
     const recent = new Date('2026-10-12T11:50:00Z');
     expect(isThrottled(recent, now).throttled).toBe(true);
     expect(isThrottled(new Date('2026-10-12T10:00:00Z'), now).throttled).toBe(false);
+  });
+});
+describe('nightly sync', () => {
+  test('runAnalyticsSync returns counts shape without db writes when empty', async () => {
+    const r = await runAnalyticsSync({ findSucceeded: async () => [] });
+    expect(r).toMatchObject({ synced: 0, skipped: 0 });
   });
 });
