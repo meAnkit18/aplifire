@@ -19,7 +19,7 @@ test('login returns token and throws server message', async () => {
 test('uploadReel runs import, channels, publish in order', async () => {
   const calls = [];
   globalThis.fetch = async (url, opts) => {
-    calls.push([url, opts && opts.method]);
+    calls.push([url, (opts && opts.method) || 'GET']);
     if (url.endsWith('/api/imports/instagram')) return { ok: true, json: async () => ({ videoId: 'V', metadata: { title: 't', description: 'd', tags: ['x'], privacy: 'public' } }) };
     if (url.endsWith('/api/channels')) return { ok: true, json: async () => ([{ _id: 'C1' }, { _id: 'C2' }]) };
     if (url.endsWith('/api/publications')) return { ok: true, json: async () => ({ ids: ['P1', 'P2'] }) };
