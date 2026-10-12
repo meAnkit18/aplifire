@@ -10,6 +10,10 @@ test('finds reel permalink in an article', () => {
 test('returns null when no reel link', () => {
   assert.strictEqual(api.findReelUrl({ querySelector: () => null }), null);
 });
+test('accepts a raw url string', () => {
+  assert.strictEqual(api.findReelUrl('https://www.instagram.com/reels/DeV9z3cvuWG/#'), 'https://www.instagram.com/reel/DeV9z3cvuWG/');
+  assert.strictEqual(api.findReelUrl('https://www.instagram.com/reels/'), null);
+});
 test('login returns token and throws server message', async () => {
   globalThis.fetch = async () => ({ ok: true, json: async () => ({ token: 'T' }) });
   assert.strictEqual(await api.login('a@b.c', 'pw'), 'T');

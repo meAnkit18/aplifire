@@ -1,42 +1,55 @@
 ;(function () {
-  const DONE = 'data-amp-upload';
-  function style(btn, text, disabled) {
-    btn.textContent = text;
-    btn.disabled = !!disabled;
+  const BTN_ID = 'amp-upload-reel-btn';
+  let busy = false;
+  let doneFor = '';
+  function currentUrl() {
+    try { return globalThis.AmplifyApi.findReelUrl(location.href); } catch (e) { return null; }
   }
-  function addButton(article, url) {
-    article.setAttribute(DONE, 'pending');
-    const btn = document.createElement('button');
+  function ensureButton() {
+    let btn = document.getElementById(BTN_ID);
+    if (btn) return btn;
+    btn = document.createElement('button');
+    btn.id = BTN_ID;
     btn.setAttribute('type', 'button');
-    btn.style.cssText = 'position:absolute;top:8px;right:8px;z-index:9999;padding:6px 10px;border:0;border-radius:8px;background:#5b6cff;color:#fff;font-weight:700;cursor:pointer;';
-    style(btn, 'Upload', false);
+    btn.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:999999;padding:10px 16px;border:0;border-radius:10px;background:#5b6cff;color:#fff;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 2px 12px rgba(0,0,0,.4);';
     btn.onclick = async () => {
-      if (article.getAttribute(DONE) === 'busy' || article.getAttribute(DONE) === 'done') return;
-      article.setAttribute(DONE, 'busy');
-      style(btn, '…', true);
+      if (busy) return;
+      const url = currentUrl();
+      if (!url) { flash(btn, 'open a reel first'); return; }
+      busy = true;
+      const idle = 'Upload reel';
+      btn.disabled = true;
+      btn.textContent = '…';
       let res;
       try {
         res = await chrome.runtime.sendMessage({ type: 'AMP_UPLOAD', url });
       } catch (e) { res = { ok: false, error: String((e && e.message) || e) }; }
+      busy = false;
+      btn.disabled = false;
       if (res && res.ok) {
-        article.setAttribute(DONE, 'done');
-        style(btn, '✓ ' + res.channelCount + ' channels', true);
+        doneFor = url;
+        btn.textContent = '✓ ' + res.channelCount + ' channels';
       } else {
-        article.setAttribute(DONE, 'pending');
         btn.title = (res && res.error) || 'failed';
-        style(btn, '⚠ retry', false);
+        flash(btn, '⚠ retry');
       }
+      function flash(b, t) { b.textContent = t; setTimeout(() => { if (!busy) b.textContent = idle; }, 4000); }
     };
-    article.appendChild(btn);
+    document.documentElement.appendChild(btn);
+    return btn;
   }
-  function scan() {
-    document.querySelectorAll('article:not([' + DONE + '])').forEach((a) => {
-      let url = null;
-      try { url = globalThis.AmplifyApi.findReelUrl(a); } catch (e) { url = null; }
-      if (url) addButton(a, url);
-      else a.setAttribute(DONE, 'skip');
-    });
+  function tick() {
+    const btn = ensureButton();
+    const url = currentUrl();
+    if (!busy && url !== doneFor && btn.textContent !== 'Upload reel' && !btn.textContent.startsWith('⚠')) {
+      btn.textContent = 'Upload reel';
+      btn.title = '';
+    }
+    if (!busy && !url && btn.textContent === 'Upload reel') {
+      btn.title = 'open a reel first';
+    }
   }
-  new MutationObserver(scan).observe(document.documentElement, { childList: true, subtree: true });
-  scan();
+  new MutationObserver(tick).observe(document.documentElement, { childList: true, subtree: true });
+  setInterval(tick, 2000);
+  tick();
 })();

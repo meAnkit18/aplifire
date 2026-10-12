@@ -8,9 +8,13 @@
     return fallback + ' (http ' + res.status + ')';
   }
   function findReelUrl(article) {
-    if (!article || typeof article.querySelector !== 'function') return null;
-    const a = article.querySelector('a[href*="/reel/"]') || article.querySelector('a[href*="/reels/"]');
-    const href = a && a.href ? String(a.href) : '';
+    const href = typeof article === 'string'
+      ? article
+      : (() => {
+        if (!article || typeof article.querySelector !== 'function') return '';
+        const a = article.querySelector('a[href*="/reel/"]') || article.querySelector('a[href*="/reels/"]');
+        return a && a.href ? String(a.href) : '';
+      })();
     const m = href.match(/instagram\.com\/reels?\/([A-Za-z0-9_-]+)/);
     return m ? 'https://www.instagram.com/reel/' + m[1] + '/' : null;
   }
