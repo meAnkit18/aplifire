@@ -10,4 +10,8 @@ export const api = {
   publish: (payload) => fetch(`${BASE}/api/publications`, { method: 'POST', headers: h(), body: JSON.stringify(payload) }).then((r) => r.json()),
   pubs: (videoId) => fetch(`${BASE}/api/publications?videoId=${videoId}`, { headers: h() }).then((r) => r.json()),
   importReel: (url) => fetch(`${BASE}/api/imports/instagram`, { method: 'POST', headers: h(), body: JSON.stringify({ url }) }).then((r) => r.json()),
+  overview: (range = '28d') => fetch(`${BASE}/api/analytics/overview?range=${range}`, { headers: h() }).then((r) => r.json()),
+  videoAnalytics: (id, range = '28d') => fetch(`${BASE}/api/analytics/videos/${id}?range=${range}`, { headers: h() }).then((r) => r.json()),
+  channelAnalytics: (id) => fetch(`${BASE}/api/analytics/channels/${id}`, { headers: h() }).then((r) => r.json()),
+  refreshAnalytics: (payload = {}) => fetch(`${BASE}/api/analytics/refresh`, { method: 'POST', headers: h(), body: JSON.stringify(payload) }).then((r) => r.json()),
 };

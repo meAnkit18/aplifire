@@ -3,6 +3,7 @@ import { routeFor } from './route.js';
 import Login from './pages/Login.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Upload from './pages/Upload.jsx';
+import Analytics from './pages/Analytics.jsx';
 import Privacy from './pages/Privacy.jsx';
 export default function App() {
   const [route, setRoute] = useState(routeFor(window.location.hash));
@@ -28,11 +29,12 @@ export default function App() {
         <b>Amplifier</b>
         <button style={s.link} onClick={() => setView('dash')}>Dashboard</button>
         <button style={s.link} onClick={() => setView('upload')}>Upload</button>
+        <button style={s.link} onClick={() => setView('analytics')}>Analytics</button>
         <button style={s.link} onClick={() => { localStorage.removeItem('token'); setAuthed(false); }}>Logout</button>
       </header>
       {view === 'dash'
         ? <Dashboard selected={selected} setSelected={setSelected} onUpload={() => setView('upload')} />
-        : <Upload selected={selected} />}
+        : view === 'analytics' ? <Analytics /> : <Upload selected={selected} />}
     </div>
   );
 }
