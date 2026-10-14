@@ -20,6 +20,29 @@ channelsRouter.get('/callback', async (req, res) => {
     res.redirect(`${process.env.FRONTEND_URL || config.frontendUrl}?connected=${ch.id}`);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
+function requirePipelineAuth(req, res, next) {
+  const h = req.headers.authorization || '';
+  const token = h.startsWith('Bearer ') ? h.slice(7) : null;
+  if (token && process.env.PIPELINE_API_KEY && token === process.env.PIPELINE_API_KEY) return next();
+  return requireAuth(req, res, next);
+}
+channelsRouter.get('/:id/token', requirePipelineAuth, async (req, res) => {
+  try {
+    const id = req.params.id;
+    let doc = null;
+    if (id && id !== 'me') {
+      try { doc = await Channel.findById(id); } catch { doc = null; }
+      if (!doc) doc = await Channel.findOne({ youtubeChannelId: id });
+    } else {
+      doc = await Channel.findOne({ status: 'connected' }).sort({ lastSyncAt: -1 });
+    }
+    if (!doc) return res.status(404).json({ error: 'channel not connected — finish the browser auth step first' });
+    const o = oauthClient();
+    o.setCredentials({ refresh_token: getRefreshToken(doc) });
+    const { token, res: tokRes } = await o.getAccessToken();
+    res.json({ access_token: token, expires_in: tokRes?.data?.expires_in ?? 3600, youtube_channel_id: doc.youtubeChannelId, title: doc.title });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 channelsRouter.use(requireAuth);
 channelsRouter.get('/oauth-url', (_req, res) => {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET)
