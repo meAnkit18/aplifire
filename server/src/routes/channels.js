@@ -49,6 +49,16 @@ channelsRouter.get('/oauth-url', (_req, res) => {
     return res.status(503).json({ error: 'Google OAuth is not configured on the server (missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET)' });
   res.json({ url: oauthUrl() });
 });
+channelsRouter.get('/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    let doc = null;
+    try { doc = await Channel.findById(id); } catch { doc = null; }
+    if (!doc) doc = await Channel.findOne({ youtubeChannelId: id });
+    if (!doc) return res.status(404).json({ error: 'channel not found' });
+    res.json({ _id: doc.id, youtubeChannelId: doc.youtubeChannelId, title: doc.title, thumbnail: doc.thumbnail, status: doc.status, lastSyncAt: doc.lastSyncAt, stats: doc.stats });
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 channelsRouter.get('/', async (_req, res) => res.json(await Channel.find().select('-encryptedRefreshToken')));
 channelsRouter.delete('/:id', async (req, res) => { await Channel.findByIdAndDelete(req.params.id); res.json({ ok: true }); });
 export function getRefreshToken(doc) { return decrypt(doc.encryptedRefreshToken, process.env.TOKEN_ENCRYPTION_KEY || config.tokenKey); }

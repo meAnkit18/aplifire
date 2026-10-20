@@ -15,4 +15,19 @@ publicationsRouter.post('/', async (req, res) => {
     res.json({ ids: docs.map((d) => d.id) });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
-publicationsRouter.get('/', async (req, res) => res.json(await Publication.find({ videoId: req.query.videoId }).populate('channelId')));
+publicationsRouter.get('/:id', async (req, res) => {
+  try {
+    const p = await Publication.findById(req.params.id).populate('channelId');
+    if (!p) return res.status(404).json({ error: 'not found' });
+    res.json(p);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
+publicationsRouter.get('/', async (req, res) => {
+  try {
+    const filter = {};
+    if (req.query.videoId) filter.videoId = req.query.videoId;
+    if (req.query.ids) filter._id = { $in: String(req.query.ids).split(',').map((s) => s.trim()).filter(Boolean) };
+    if (req.query.status) filter.status = req.query.status;
+    res.json(await Publication.find(filter).populate('channelId'));
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
