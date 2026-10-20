@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { Router } from 'express';
-import { verifyAdmin, signToken, requireAdmin, hashKey } from '../auth.js';
+import { verifyAdmin, signToken, requireAdmin, hashKey, setAdminPassword } from '../auth.js';
 import { AgentKey } from '../models/AgentKey.js';
 
 export const authRouter = Router();
@@ -10,6 +10,19 @@ authRouter.post('/login', async (req, res) => {
   if (!email || !password) return res.status(400).json({ error: 'email+password required' });
   if (!(await verifyAdmin(email, password))) return res.status(401).json({ error: 'invalid credentials' });
   res.json({ token: signToken() });
+});
+
+// Set/reset the admin password. Requires an existing admin JWT (env hash or
+// a previously set password both work to obtain that JWT).
+authRouter.post('/password', requireAdmin, async (req, res) => {
+  try {
+    const password = req.body?.password;
+    const email = req.body?.email || process.env.ADMIN_EMAIL;
+    if (!email) return res.status(400).json({ error: 'email required' });
+    if (!password || String(password).length < 8) return res.status(400).json({ error: 'password must be at least 8 characters' });
+    await setAdminPassword(email, String(password));
+    res.json({ ok: true, email });
+  } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
 // Create a long-lived key for local agents. The plaintext key is shown once.

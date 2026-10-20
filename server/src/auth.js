@@ -1,15 +1,31 @@
 import crypto from 'node:crypto';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import mongoose from 'mongoose';
 import { config } from './config.js';
 import { AgentKey } from './models/AgentKey.js';
+import { AdminCredential } from './models/AdminCredential.js';
 
 export async function verifyAdmin(email, password) {
+  // A password set from the UI/API (stored in Mongo) overrides the env hash.
+  if (mongoose.connection.readyState === 1) {
+    try {
+      const doc = await AdminCredential.findOne({ email });
+      if (doc) return bcrypt.compare(password, doc.passwordHash);
+    } catch { /* fall back to env */ }
+  }
   if (email !== (process.env.ADMIN_EMAIL || config.adminEmail)) return false;
   const hash = process.env.ADMIN_PASSWORD_HASH || config.adminPasswordHash;
   if (!hash) return false;
   return bcrypt.compare(password, hash);
 }
+
+export async function setAdminPassword(email, password) {
+  const passwordHash = await bcrypt.hash(password, 10);
+  await AdminCredential.findOneAndUpdate({ email }, { passwordHash }, { upsert: true });
+  return email;
+}
+
 export function signToken() { return jwt.sign({ sub: 'admin' }, process.env.JWT_SECRET || config.jwtSecret, { expiresIn: '7d' }); }
 
 export const hashKey = (key) => crypto.createHash('sha256').update(key).digest('hex');
