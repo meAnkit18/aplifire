@@ -68,7 +68,7 @@ Keep the key secret; revoke and create a new one if it leaks.
    POST /api/analytics/refresh   { "videoId": "..." }   (optional, throttled 15m)
    ```
 
-## Direct YouTube access
+## Direct YouTube access (recommended for large files)
 
 If an agent prefers to call the YouTube Data API directly, mint a short-lived
 access token for a connected channel:
@@ -80,6 +80,27 @@ GET /api/channels/<id>/token     (id = mongo _id, youtubeChannelId, or "me")
 
 Use it as `Authorization: Bearer <access_token>` against
 `https://www.googleapis.com/youtube/v3/...`.
+
+Why this matters: `/api/videos` buffers the file in the server process and
+stages it on Cloudinary, which is fine for small clips but can hit Render's
+memory/time limits for large uploads. For big files, have the agent stream the
+local file straight to `youtube.videos.insert` with the minted token. The
+refresh token stays on the server; the agent only ever sees a 1-hour access
+token.
+
+Example (Python, google-api-python-client):
+
+```python
+# token = GET /api/channels/me/token -> access_token
+creds = google.oauth2.credentials.Credentials(token)
+youtube = googleapiclient.discovery.build("youtube", "v3", credentials=creds)
+youtube.videos().insert(
+    part="snippet,status",
+    body={"snippet": {"title": "...", "description": "..."},
+          "status": {"privacyStatus": "private"}},
+    media_body=googleapiclient.http.MediaFileUpload("video.mp4", chunksize=-1, resumable=True),
+).execute()
+```
 
 ## Imports
 
