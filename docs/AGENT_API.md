@@ -102,6 +102,34 @@ youtube.videos().insert(
 ).execute()
 ```
 
+## Target one channel (not all)
+
+Connecting multiple channels is for authentication only. When publishing, send
+only the target channel's `_id` in `channelIds`:
+
+```
+GET /api/channels
+→ [{ "_id": "...", "title": "Wild Thinking", "youtubeChannelId": "..." }]
+
+POST /api/publications
+{ "videoId": "...", "channelIds": ["<Wild Thinking _id>"], "metadata": { ... } }
+```
+
+## Register an upload made directly through YouTube
+
+If an agent streamed the file to YouTube itself (recommended for large files),
+register it so analytics can track it:
+
+```
+POST /api/publications/register
+{ "channelId": "<mongo _id or youtubeChannelId>",
+  "youtubeVideoId": "dQw4w9WgXcQ",
+  "metadata": { "title": "...", "description": "...", "tags": [], "privacy": "public" } }
+→ { publicationId, videoId, channelId, youtubeVideoId }
+```
+
+The returned `videoId` is what `/api/analytics/videos/:videoId` expects.
+
 ## Imports
 
 ```

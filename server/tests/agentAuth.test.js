@@ -26,10 +26,14 @@ vi.mock('../src/models/Publication.js', () => ({
   Publication: {
     find: () => query([]),
     findById: () => query(null),
+    create: async (doc) => ({ id: 'p1', ...doc }),
   },
 }));
 vi.mock('../src/models/Video.js', () => ({
-  Video: { find: () => query([]) },
+  Video: {
+    find: () => query([]),
+    create: async (doc) => ({ id: 'v1', ...doc }),
+  },
 }));
 vi.mock('../src/models/AgentKey.js', () => ({
   AgentKey: {
@@ -64,6 +68,17 @@ test('a DB-stored amp_ key is accepted', async () => {
   const app = createApp();
   const res = await request(app).get('/api/channels').set('Authorization', 'Bearer amp_deadbeef');
   expect(res.status).toBe(200);
+});
+
+test('agent can register a video uploaded directly to YouTube', async () => {
+  const app = createApp();
+  const res = await request(app)
+    .post('/api/publications/register')
+    .set('Authorization', 'Bearer agent-key-123')
+    .send({ channelId: 'c1', youtubeVideoId: 'yt-direct-1', metadata: { title: 'Direct' } });
+  expect(res.status).toBe(200);
+  expect(res.body.youtubeVideoId).toBe('yt-direct-1');
+  expect(res.body.publicationId).toBe('p1');
 });
 
 test('from-url validates the url before downloading', async () => {

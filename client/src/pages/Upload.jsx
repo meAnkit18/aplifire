@@ -37,7 +37,7 @@ export default function Upload({ selected, presetChannels }) {
   }
   return (
     <div style={s.wrap}>
-      <h2 style={{ margin: '4px 0 12px' }}>Upload once → publish everywhere</h2>
+      <h2 style={{ margin: '4px 0 12px' }}>Upload once → publish to selected channel(s)</h2>
       <div style={s.card}>
         <input style={s.input} placeholder="Paste Instagram reel link…" value={link} onChange={(e) => setLink(e.target.value)} />
         <button style={s.btn} onClick={async () => {
@@ -51,7 +51,11 @@ export default function Upload({ selected, presetChannels }) {
             if (r.metadata) setMeta({ title: r.metadata.title || '', description: r.metadata.description || '', tags: (r.metadata.tags || []).join(', '), privacy: r.metadata.privacy || 'public' });
             else setMeta((m) => ({ ...m, privacy: 'public' }));
             const list = await api.channels();
-            if (Array.isArray(list)) { setChannels(list); setIds(list.map((c) => c._id)); }
+            if (Array.isArray(list)) {
+              setChannels(list);
+              // Keep only channels the user explicitly selected; never auto-target every channel.
+              setIds((prev) => prev.filter((id) => list.some((c) => c._id === id)));
+            }
           } catch (e) { alert(`import failed: ${e.message}`); } finally { setBusy(''); }
         }} disabled={busy}>{busy || 'Import reel'}</button>
       </div>
