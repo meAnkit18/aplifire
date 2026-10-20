@@ -34,7 +34,7 @@ Keep it secret; rotate by changing the env var and redeploying.
 3. Publish to one or more channels:
    ```
    POST /api/publications
-   { "videoId": "...", "channelIds": ["<mongo _id or youtubeChannelId>"], "metadata": { "title", "description", "tags": [], "privacy": "public|unlisted|private" } }
+   { "videoId": "...", "channelIds": ["<mongo _id from GET /api/channels>"], "metadata": { "title", "description", "tags": [], "privacy": "public|unlisted|private" } }
    ```
    → `{ ids: [publicationId, ...] }`
 4. Poll status:
