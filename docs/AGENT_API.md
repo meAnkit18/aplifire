@@ -11,13 +11,29 @@ Cursor, etc.) can call with a single secret: `PIPELINE_API_KEY`.
 ## Authentication
 
 Every `/api/*` endpoint (except `/api/health` and `/api/channels/callback`)
-accepts either:
+accepts any of:
 
-- `Authorization: Bearer <admin JWT>` (from `POST /api/auth/login`), or
-- `Authorization: Bearer <PIPELINE_API_KEY>` (recommended for agents).
+- `Authorization: Bearer <admin JWT>` (from `POST /api/auth/login`, expires in 7 days)
+- `Authorization: Bearer <PIPELINE_API_KEY>` (server env var)
+- `Authorization: Bearer amp_...` (long-lived key stored in MongoDB)
 
-The pipeline key is read from the `PIPELINE_API_KEY` env var on the server.
-Keep it secret; rotate by changing the env var and redeploying.
+### Create a long-lived agent key
+
+Log in as the admin (in the UI, or `POST /api/auth/login`), then:
+
+```
+POST /api/auth/agent-key        { "label": "my-laptop" }
+→ { "id": "...", "key": "amp_...", "prefix": "amp_..." }
+```
+
+The plaintext key is returned **once**; only a hash is stored. List and revoke:
+
+```
+GET    /api/auth/agent-key
+DELETE /api/auth/agent-key/<id>
+```
+
+Keep the key secret; revoke and create a new one if it leaks.
 
 ## Quick flow for an agent
 

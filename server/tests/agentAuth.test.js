@@ -31,6 +31,12 @@ vi.mock('../src/models/Publication.js', () => ({
 vi.mock('../src/models/Video.js', () => ({
   Video: { find: () => query([]) },
 }));
+vi.mock('../src/models/AgentKey.js', () => ({
+  AgentKey: {
+    findOne: async () => ({ _id: 'k1' }),
+    updateOne: async () => ({}),
+  },
+}));
 
 import { createApp } from '../src/app.js';
 
@@ -52,6 +58,12 @@ test('agent key rejects an unknown key', async () => {
   const app = createApp();
   const res = await request(app).get('/api/channels').set('Authorization', 'Bearer not-the-key');
   expect(res.status).toBe(401);
+});
+
+test('a DB-stored amp_ key is accepted', async () => {
+  const app = createApp();
+  const res = await request(app).get('/api/channels').set('Authorization', 'Bearer amp_deadbeef');
+  expect(res.status).toBe(200);
 });
 
 test('from-url validates the url before downloading', async () => {

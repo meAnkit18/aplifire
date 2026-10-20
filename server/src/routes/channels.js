@@ -21,9 +21,6 @@ channelsRouter.get('/callback', async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 function requirePipelineAuth(req, res, next) {
-  const h = req.headers.authorization || '';
-  const token = h.startsWith('Bearer ') ? h.slice(7) : null;
-  if (token && process.env.PIPELINE_API_KEY && token === process.env.PIPELINE_API_KEY) return next();
   return requireAuth(req, res, next);
 }
 channelsRouter.get('/:id/token', requirePipelineAuth, async (req, res) => {
