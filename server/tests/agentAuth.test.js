@@ -25,6 +25,7 @@ vi.mock('../src/models/Channel.js', () => ({
 vi.mock('../src/models/Publication.js', () => ({
   Publication: {
     find: () => query([]),
+    findOne: async () => null,
     findById: () => query(null),
     create: async (doc) => ({ id: 'p1', ...doc }),
   },

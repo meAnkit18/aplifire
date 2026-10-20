@@ -26,6 +26,8 @@ publicationsRouter.post('/register', async (req, res) => {
     try { channel = await Channel.findById(channelId); } catch { channel = null; }
     if (!channel) channel = await Channel.findOne({ youtubeChannelId: channelId });
     if (!channel) return res.status(404).json({ error: 'channel not found' });
+    const existing = await Publication.findOne({ channelId: channel._id, youtubeVideoId });
+    if (existing) return res.json({ publicationId: existing.id, videoId: existing.videoId, channelId: channel._id, youtubeVideoId, existing: true });
     const video = await Video.create({ metadata: metadata || {} });
     const pub = await Publication.create({
       videoId: video.id, channelId: channel._id, status: 'succeeded', youtubeVideoId,
