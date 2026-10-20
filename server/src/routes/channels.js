@@ -17,7 +17,8 @@ channelsRouter.get('/callback', async (req, res) => {
     await Channel.findOneAndUpdate({ youtubeChannelId: ch.id },
       { title: ch.snippet.title, thumbnail: ch.snippet.thumbnails?.default?.url, encryptedRefreshToken: encrypt(tokens.refresh_token, key), status: 'connected', lastSyncAt: new Date() },
       { upsert: true });
-    res.redirect(`${process.env.FRONTEND_URL || config.frontendUrl}?connected=${ch.id}`);
+    const frontend = (process.env.FRONTEND_URL || config.frontendUrl).split(',')[0].trim();
+    res.redirect(`${frontend}?connected=${ch.id}`);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 function requirePipelineAuth(req, res, next) {
