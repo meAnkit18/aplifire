@@ -1,5 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'node:path';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { authRouter } from './routes/auth.js';
 import { channelsRouter } from './routes/channels.js';
 import { videosRouter } from './routes/videos.js';
@@ -17,5 +20,14 @@ export function createApp() {
   app.use('/api/publications', publicationsRouter);
   app.use('/api/imports', importsRouter);
   app.use('/api/analytics', analyticsRouter);
+
+  // Serve the built React client from the same origin as the API. This gives a
+  // deployment URL that works on networks where *.vercel.app is blocked, and
+  // removes CORS from the browser flow entirely.
+  const publicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
+  if (existsSync(publicDir)) {
+    app.use(express.static(publicDir));
+    app.get(/^(?!\/api(?:\/|$)).*/, (_req, res) => res.sendFile(path.join(publicDir, 'index.html')));
+  }
   return app;
 }

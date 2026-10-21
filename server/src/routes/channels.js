@@ -17,7 +17,7 @@ channelsRouter.get('/callback', async (req, res) => {
     await Channel.findOneAndUpdate({ youtubeChannelId: ch.id },
       { title: ch.snippet.title, thumbnail: ch.snippet.thumbnails?.default?.url, encryptedRefreshToken: encrypt(tokens.refresh_token, key), status: 'connected', lastSyncAt: new Date() },
       { upsert: true });
-    const frontend = (process.env.FRONTEND_URL || config.frontendUrl).split(',')[0].trim();
+    const frontend = callbackOrigin(req);
     res.redirect(`${frontend}?connected=${ch.id}`);
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -42,10 +42,51 @@ channelsRouter.get('/:id/token', requirePipelineAuth, async (req, res) => {
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
 channelsRouter.use(requireAuth);
-channelsRouter.get('/oauth-url', (_req, res) => {
+
+function configuredFrontends() {
+  return (process.env.FRONTEND_URL || config.frontendUrl)
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+// The OAuth callback is a top-level Google redirect, so it carries no Origin
+// header. Remember the origin that started the flow in `state` instead, and
+// only redirect back to an origin we already trust (no open redirect).
+function requestOrigin(req) {
+  const raw = req.headers.origin || req.headers.referer;
+  if (!raw) return null;
+  try { return new URL(raw).origin; } catch { return null; }
+}
+
+function isAllowedOrigin(origin, req) {
+  if (!origin) return false;
+  let url;
+  try { url = new URL(origin); } catch { return false; }
+  const host = req.get('host');
+  return configuredFrontends().includes(origin)
+    || (!!host && url.host === host)
+    || url.hostname === 'localhost'
+    || url.hostname === '127.0.0.1';
+}
+
+function callbackOrigin(req) {
+  const raw = typeof req.query.state === 'string' ? req.query.state : '';
+  let fromState = null;
+  if (raw) {
+    try { fromState = Buffer.from(raw, 'base64url').toString('utf8'); } catch { fromState = null; }
+  }
+  if (fromState && isAllowedOrigin(fromState, req)) return fromState;
+  return configuredFrontends()[0];
+}
+
+channelsRouter.get('/oauth-url', (req, res) => {
   if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET)
     return res.status(503).json({ error: 'Google OAuth is not configured on the server (missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET)' });
-  res.json({ url: oauthUrl() });
+  const url = new URL(oauthUrl());
+  const origin = requestOrigin(req);
+  if (origin && isAllowedOrigin(origin, req)) url.searchParams.set('state', Buffer.from(origin).toString('base64url'));
+  res.json({ url: url.toString() });
 });
 channelsRouter.get('/:id', async (req, res) => {
   try {

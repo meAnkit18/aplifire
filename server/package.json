@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:client": "cd ../client && VITE_API_URL=${VITE_API_URL:-https://amplifier-api.onrender.com} npm run build && rm -rf ../server/public && cp -r dist ../server/public"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

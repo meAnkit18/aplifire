@@ -57,3 +57,41 @@ test('oauth-url returns a Google url when configured', async () => {
   delete process.env.GOOGLE_CLIENT_SECRET;
   delete process.env.GOOGLE_REDIRECT_URI;
 });
+
+test('oauth-url remembers the calling origin in state', async () => {
+  process.env.GOOGLE_CLIENT_ID = 'test-client-id';
+  process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
+  process.env.GOOGLE_REDIRECT_URI = 'http://localhost:5000/api/channels/callback';
+  process.env.FRONTEND_URL = 'https://app.example.com';
+  const app = createApp();
+  const t = await login(app);
+  const res = await request(app).get('/api/channels/oauth-url')
+    .set('Authorization', `Bearer ${t}`)
+    .set('Origin', 'https://app.example.com');
+  expect(res.status).toBe(200);
+  const url = new URL(res.body.url);
+  expect(Buffer.from(url.searchParams.get('state'), 'base64url').toString()).toBe('https://app.example.com');
+  delete process.env.GOOGLE_CLIENT_ID;
+  delete process.env.GOOGLE_CLIENT_SECRET;
+  delete process.env.GOOGLE_REDIRECT_URI;
+  delete process.env.FRONTEND_URL;
+});
+
+test('oauth-url ignores an untrusted origin', async () => {
+  process.env.GOOGLE_CLIENT_ID = 'test-client-id';
+  process.env.GOOGLE_CLIENT_SECRET = 'test-client-secret';
+  process.env.GOOGLE_REDIRECT_URI = 'http://localhost:5000/api/channels/callback';
+  process.env.FRONTEND_URL = 'https://app.example.com';
+  const app = createApp();
+  const t = await login(app);
+  const res = await request(app).get('/api/channels/oauth-url')
+    .set('Authorization', `Bearer ${t}`)
+    .set('Origin', 'https://evil.example.net');
+  expect(res.status).toBe(200);
+  const url = new URL(res.body.url);
+  expect(url.searchParams.get('state')).toBeNull();
+  delete process.env.GOOGLE_CLIENT_ID;
+  delete process.env.GOOGLE_CLIENT_SECRET;
+  delete process.env.GOOGLE_REDIRECT_URI;
+  delete process.env.FRONTEND_URL;
+});
